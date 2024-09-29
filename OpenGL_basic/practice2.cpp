@@ -11,6 +11,7 @@ std::uniform_real_distribution<float> urd{ 0.0f,1.0f };
 
 void drawScene(); // 그리기 함수 선언
 void Reshape(int w, int h); // 크기 조정 함수 선언
+void Mouse(int button, int state, int x, int y);
 
 struct Rect {
     int xStart, yStart, xEnd, yEnd;
@@ -29,8 +30,6 @@ Rect rect1(-1, 1, 0, 0);
 Rect rect2(0, 1, 1, 0);
 Rect rect3(-1, 0, 0, -1);
 Rect rect4(0, 0, 1, -1);
-
-
 
 int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
     // 윈도우 생성하기
@@ -52,6 +51,7 @@ int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
 
     glutDisplayFunc(drawScene); // 출력 함수 지정
     glutReshapeFunc(Reshape); // 다시 그리기 함수 지정
+    glutMouseFunc(Mouse);
     glutMainLoop(); // 이벤트 처리 시작
 
     return 0; // main 함수 종료
@@ -60,10 +60,13 @@ int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
 void drawScene() { // 그리기 콜백 함수
     glColor3f(rect1.r, rect1.g, rect1.b);
     glRectf(rect1.xStart, rect1.yStart, rect1.xEnd, rect1.yEnd);
+
     glColor3f(rect2.r, rect2.g, rect2.b);
     glRectf(rect2.xStart, rect2.yStart, rect2.xEnd, rect2.yEnd);
+
     glColor3f(rect3.r, rect3.g, rect3.b);
     glRectf(rect3.xStart, rect3.yStart, rect3.xEnd, rect3.yEnd);
+
     glColor3f(rect4.r, rect4.g, rect4.b);
     glRectf(rect4.xStart, rect4.yStart, rect4.xEnd, rect4.yEnd);
 
@@ -72,4 +75,22 @@ void drawScene() { // 그리기 콜백 함수
 
 void Reshape(int w, int h) { // 크기 조정 콜백 함수
     glViewport(0, 0, w, h);
+}
+
+
+void Mouse(int button, int state, int x, int y)
+{
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x < 400 && y < 300) {
+        rect1.r = urd(dre); rect1.g = urd(dre); rect1.b = urd(dre);
+    }
+    else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x > 400 && y < 300) {
+        rect2.r = urd(dre); rect2.g = urd(dre); rect2.b = urd(dre);
+    }
+    else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x < 400 && y > 300) {
+        rect3.r = urd(dre); rect3.g = urd(dre); rect3.b = urd(dre);
+    }
+    else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x > 400 && y > 300) {
+        rect4.r = urd(dre); rect4.g = urd(dre); rect4.b = urd(dre);
+    }
+       
 }
