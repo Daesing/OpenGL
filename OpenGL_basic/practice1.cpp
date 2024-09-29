@@ -11,6 +11,9 @@ std::uniform_real_distribution<float> urd{ 0.0f,1.0f };
 GLvoid drawScene(GLvoid);
 GLvoid Reshape(int w, int h);
 GLvoid Keyboard(unsigned char key, int x, int y);
+void TimerFunction(int value);
+
+bool timerActive{false};
 
 int main(int argc, char** argv) { //--- 윈도우 출력하고 콜백함수 설정
     //--- 윈도우 생성하기
@@ -33,6 +36,7 @@ int main(int argc, char** argv) { //--- 윈도우 출력하고 콜백함수 설정
     glutDisplayFunc(drawScene); //--- 출력 콜백함수의 지정
     glutReshapeFunc(Reshape); //--- 다시 그리기 콜백함수 지정
     glutKeyboardFunc(Keyboard); //--- 키보드 입력 콜백함수 지정
+    glutTimerFunc(1000, TimerFunction, 1);
     glutMainLoop(); //--- 이벤트 처리 시작
 }
 
@@ -71,9 +75,32 @@ GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
     case 'a':
         glClearColor(red, green, blue, 1.0f);
         break;
+    case 't':
+        timerActive = true;
+        glutTimerFunc(1000, TimerFunction, 1); // 타이머함수 재 설정
+        break;
+    case 's':
+        timerActive = false;
+        break;
+    case 'q':
+        glutLeaveMainLoop();
+        break;
     default:
         break;
     }
     glutPostRedisplay(); //--- 배경색이 바뀔 때마다 출력 콜백 함수를 호출하여 화면을 refresh 한다
 }
+
+void TimerFunction(int value)
+{
+    GLclampf red{ urd(dre) }, green{ urd(dre) }, blue{ urd(dre) };
+
+    if (!timerActive)
+        return;
+
+    glClearColor(red, green, blue, 1.0f);
+    glutPostRedisplay(); // 화면 재 출력
+    glutTimerFunc(1000, TimerFunction, 1); // 타이머함수 재 설정
+}
+
 
