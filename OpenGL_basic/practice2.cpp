@@ -2,15 +2,34 @@
 #include <GL/glew.h> // 필요한 헤더파일 include
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
+#include <random>
+
+
+std::random_device rd;
+std::default_random_engine dre(rd());
+std::uniform_real_distribution<float> urd{ 0.0f,1.0f };
 
 void drawScene(); // 그리기 함수 선언
 void Reshape(int w, int h); // 크기 조정 함수 선언
 
+struct Rect {
+    int xStart, yStart, xEnd, yEnd;
+    float r{ urd(dre) }, g{ urd(dre) }, b{ urd(dre) };
+    
+    Rect(int xStart_, int yStart_, int xEnd_, int yEnd_) {
+        xStart = xStart_;
+        yStart = yStart_;
+        xEnd = xEnd_;
+        yEnd = yEnd_;
+    }
 
-int start_x1{ -1 }, start_y1{ 1 }, end_x1{ 0 }, end_y1{ 0 };
-int start_x2{ 0 }, start_y2{ 1 }, end_x2{ 1 }, end_y2{ 0 };
-int start_x3{ -1 }, start_y3{ 0 }, end_x3{ 0 }, end_y3{ -1 };
-int start_x4{ 0 }, start_y4{ 0 }, end_x4{ 1 }, end_y4{ -1 };
+};
+
+Rect rect1(-1, 1, 0, 0);
+Rect rect2(0, 1, 1, 0);
+Rect rect3(-1, 0, 0, -1);
+Rect rect4(0, 0, 1, -1);
+
 
 
 int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
@@ -39,10 +58,15 @@ int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
 }
 
 void drawScene() { // 그리기 콜백 함수
-    glRectf(start_x1, start_y1, end_x1, end_y1);
-    glRectf(start_x2, start_y2, end_x2, end_y2);
-    glRectf(start_x3, start_y3, end_x3, end_y3);
-    glRectf(start_x4, start_y4, end_x4, end_y4);
+    glColor3f(rect1.r, rect1.g, rect1.b);
+    glRectf(rect1.xStart, rect1.yStart, rect1.xEnd, rect1.yEnd);
+    glColor3f(rect2.r, rect2.g, rect2.b);
+    glRectf(rect2.xStart, rect2.yStart, rect2.xEnd, rect2.yEnd);
+    glColor3f(rect3.r, rect3.g, rect3.b);
+    glRectf(rect3.xStart, rect3.yStart, rect3.xEnd, rect3.yEnd);
+    glColor3f(rect4.r, rect4.g, rect4.b);
+    glRectf(rect4.xStart, rect4.yStart, rect4.xEnd, rect4.yEnd);
+
     glutSwapBuffers(); // 화면에 출력하기
 }
 
