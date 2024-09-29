@@ -1,7 +1,12 @@
 #include <iostream> //--- 필요한 헤더파일 include
+#include <random>
 #include <GL/glew.h>
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
+
+std::random_device rd;
+std::default_random_engine dre(rd());
+std::uniform_real_distribution<float> urd{ 0.0f,1.0f };
 
 GLvoid drawScene(GLvoid);
 GLvoid Reshape(int w, int h);
@@ -43,6 +48,10 @@ GLvoid Reshape(int w, int h) { //--- 콜백 함수: 다시 그리기 콜백 함수
 }
 
 GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
+
+    GLclampf red{ urd(dre) }, green{ urd(dre) }, blue{ urd(dre) };
+
+
     switch (key) {
     case 'c':
         glClearColor(0.0f, 1.0f, 1.0f, 1.0f); //--- 배경색을 청록색으로 설정
@@ -57,11 +66,14 @@ GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
         glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
         break;
     case 'k':
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         break;
-        
+    case 'a':
+        glClearColor(red, green, blue, 1.0f);
+        break;
     default:
         break;
     }
     glutPostRedisplay(); //--- 배경색이 바뀔 때마다 출력 콜백 함수를 호출하여 화면을 refresh 한다
 }
+
