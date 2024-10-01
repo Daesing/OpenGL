@@ -14,7 +14,7 @@ void Reshape(int w, int h); // 크기 조정 함수 선언
 void Mouse(int button, int state, int x, int y);
 
 struct Rect {
-    int xStart, yStart, xEnd, yEnd;
+    float xStart, yStart, xEnd, yEnd;
     float r{ urd(dre) }, g{ urd(dre) }, b{ urd(dre) };
     
     Rect(int xStart_, int yStart_, int xEnd_, int yEnd_) {
@@ -49,9 +49,10 @@ int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
         std::cout << "GLEW Initialized\n";
     }
 
+   
     glutDisplayFunc(drawScene); // 출력 함수 지정
-    glutReshapeFunc(Reshape); // 다시 그리기 함수 지정
     glutMouseFunc(Mouse);
+    //glutReshapeFunc(Reshape); // 다시 그리기 함수 지정
     glutMainLoop(); // 이벤트 처리 시작
 
     return 0; // main 함수 종료
@@ -92,5 +93,6 @@ void Mouse(int button, int state, int x, int y)
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x > 400 && y > 300) {
         rect4.r = urd(dre); rect4.g = urd(dre); rect4.b = urd(dre);
     }
+
        
 }
