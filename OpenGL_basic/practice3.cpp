@@ -3,6 +3,11 @@
 #include <GL/freeglut.h>
 #include <GL/freeglut_ext.h>
 #include <random>
+#include <vector>
+
+
+CONST INT WIDTH = 800;
+CONST INT HEIGHT = 800;
 
 std::random_device rd;
 std::default_random_engine dre(rd());
@@ -26,13 +31,17 @@ struct Rect {
 
 };
 
+std::vector<Rect> extra;
+
 GLvoid drawScene(GLvoid);
 GLvoid Reshape(int w, int h);
 void Keyboard(unsigned char key, int x, int y);
 void Mouse(int button, int state, int x, int y);
 void Motion(int x, int y);
+float modify_xcord(int x);
+float modify_ycord(int y);
 
-bool left_button;
+bool left_button{ false };
 bool right_button;
 
 Rect min_rect[10];
@@ -101,7 +110,7 @@ void Keyboard(unsigned char key, int x, int y)
     default:
         break;
     }
-    glutPostRedisplay(); //--- 배경색이 바뀔 때마다 출력 콜백 함수를 호출하여 화면을 refresh 한다
+    glutPostRedisplay();
 }
 
 void Mouse(int button, int state, int x, int y)
@@ -112,10 +121,35 @@ void Mouse(int button, int state, int x, int y)
 
 void Motion(int x, int y)
 {
+    float m_x{ modify_xcord(x) }, m_y{ modify_ycord(y) };
+
     if (left_button == true) {
         for (int i = 0; i < 10; ++i) {
-            
+            if (min_rect[i].xStart > m_x && min_rect[i].xEnd < m_x && min_rect[i].yStart > m_y && min_rect[i].yEnd < m_y) {
+                min_rect[i].xEnd = m_x + 0.1;
+                min_rect[i].yStart = m_x + 0.1;
+                min_rect[i].yEnd = m_x - 0.1;
+
+
+            }
 
         }
+        glutPostRedisplay();
     }
+}
+
+float modify_xcord(int x) {
+    float modify_x;
+    modify_x = static_cast<float>(x);
+    modify_x = (x - WIDTH / 2.0) / (WIDTH / 2.0);
+
+    return modify_x;
+
+}
+float modify_ycord(int y) {
+    float modify_y;
+    modify_y = static_cast<float>(y);
+    modify_y = (HEIGHT / 2.0 - y) / (HEIGHT / 2.0);
+
+    return modify_y;
 }

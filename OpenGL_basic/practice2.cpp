@@ -4,6 +4,8 @@
 #include <GL/freeglut_ext.h>
 #include <random>
 
+CONST INT WIDTH = 800;
+CONST INT HEIGHT = 600;
 
 std::random_device rd;
 std::default_random_engine dre(rd());
@@ -12,6 +14,8 @@ std::uniform_real_distribution<float> urd{ 0.0f,1.0f };
 void drawScene(); // 그리기 함수 선언
 void Reshape(int w, int h); // 크기 조정 함수 선언
 void Mouse(int button, int state, int x, int y);
+float modify_xcord(int x);
+float modify_ycord(int y);
 
 struct Rect {
     float xStart, yStart, xEnd, yEnd;
@@ -52,7 +56,7 @@ int main(int argc, char** argv) { // 윈도우 출력하고 콜백함수 설정
    
     glutDisplayFunc(drawScene); // 출력 함수 지정
     glutMouseFunc(Mouse);
-    //glutReshapeFunc(Reshape); // 다시 그리기 함수 지정
+    glutReshapeFunc(Reshape); // 다시 그리기 함수 지정
     glutMainLoop(); // 이벤트 처리 시작
 
     return 0; // main 함수 종료
@@ -63,7 +67,7 @@ void drawScene() { // 그리기 콜백 함수
     glRectf(rect1.xStart, rect1.yStart, rect1.xEnd, rect1.yEnd);
 
     glColor3f(rect2.r, rect2.g, rect2.b);
-    glRectf(rect2.xStart, rect2.yStart, rect2.xEnd, rect2.yEnd);
+    //glRectf(rect2.xStart, rect2.yStart, rect2.xEnd, rect2.yEnd);
 
     glColor3f(rect3.r, rect3.g, rect3.b);
     glRectf(rect3.xStart, rect3.yStart, rect3.xEnd, rect3.yEnd);
@@ -81,18 +85,70 @@ void Reshape(int w, int h) { // 크기 조정 콜백 함수
 
 void Mouse(int button, int state, int x, int y)
 {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x < 400 && y < 300) {
-        rect1.r = urd(dre); rect1.g = urd(dre); rect1.b = urd(dre);
-    }
-    else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x > 400 && y < 300) {
-        rect2.r = urd(dre); rect2.g = urd(dre); rect2.b = urd(dre);
-    }
-    else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x < 400 && y > 300) {
-        rect3.r = urd(dre); rect3.g = urd(dre); rect3.b = urd(dre);
-    }
-    else if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN && x > 400 && y > 300) {
-        rect4.r = urd(dre); rect4.g = urd(dre); rect4.b = urd(dre);
-    }
 
-       
+    float modify_x{ modify_xcord(x) }, modify_y{ modify_ycord(y) };
+
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+        if ((modify_x < rect1.xEnd) && (rect1.xStart < modify_x) && (modify_y < rect1.yStart) && (rect1.yEnd < modify_y)) {
+            rect1.r = urd(dre); rect1.g = urd(dre); rect1.b = urd(dre);
+        }
+        else if ((modify_x < rect2.xEnd) && (rect2.xStart < modify_x) && (modify_y > rect2.yEnd) && (rect2.yStart > modify_y)) {
+            rect2.r = urd(dre); rect2.g = urd(dre); rect2.b = urd(dre);
+        }
+        else if ((modify_x < rect3.xEnd) && (rect3.xStart < modify_x) && (modify_y > rect3.yEnd) && (rect3.yStart > modify_y)) {
+            rect3.r = urd(dre); rect3.g = urd(dre); rect3.b = urd(dre);
+        }
+        else if ((modify_x < rect4.xEnd) && (rect4.xStart < modify_x) && (modify_y > rect4.yEnd) && (rect4.yStart > modify_y)) {
+            rect4.r = urd(dre); rect4.g = urd(dre); rect4.b = urd(dre);
+        }
+        else {
+            
+        }
+    }
+    else if (GLUT_RIGHT_BUTTON && state == GLUT_DOWN) {
+        if ((modify_x < rect1.xEnd) && (rect1.xStart < modify_x) && (modify_y < rect1.yStart) && (rect1.yEnd < modify_y)) {
+            rect1.xStart += 0.1;
+            rect1.xEnd -= 0.1;
+            rect1.yStart -= 0.1;
+            rect1.yEnd += 0.1;
+        }
+        else if ((modify_x < rect2.xEnd) && (rect2.xStart < modify_x) && (modify_y > rect2.yEnd) && (rect2.yStart > modify_y)) {
+            rect2.xStart += 0.1;
+            rect2.xEnd -= 0.1;
+            rect2.yStart -= 0.1;
+            rect2.yEnd += 0.1;
+        }
+        else if ((modify_x < rect3.xEnd) && (rect3.xStart < modify_x) && (modify_y > rect3.yEnd) && (rect3.yStart > modify_y)) {
+            rect3.xStart += 0.1;
+            rect3.xEnd -= 0.1;
+            rect3.yStart -= 0.1;
+            rect3.yEnd += 0.1;
+        }
+        else if ((modify_x < rect4.xEnd) && (rect4.xStart < modify_x) && (modify_y > rect4.yEnd) && (rect4.yStart > modify_y)) {
+            rect4.xStart += 0.1;
+            rect4.xEnd -= 0.1;
+            rect4.yStart -= 0.1;
+            rect4.yEnd += 0.1;
+        }
+        else {
+            
+        }
+
+    }
+}
+
+float modify_xcord(int x) {
+    float modify_x;
+    modify_x = static_cast<float>(x);
+    modify_x = (x - WIDTH / 2.0) / (WIDTH / 2.0);
+    
+    return modify_x;
+
+}
+float modify_ycord(int y) {
+    float modify_y;
+    modify_y = static_cast<float>(y);
+    modify_y = (HEIGHT / 2.0 - y) / (HEIGHT / 2.0);
+
+    return modify_y;
 }
