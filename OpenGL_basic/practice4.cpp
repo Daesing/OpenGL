@@ -34,10 +34,15 @@ struct Rect {
     float r{}, g{}, b{};
     int size{ 15 };
     bool isActive = false;
+    bool move_x{ true }, move_y{ true };
+
+
 };
 Rect r[5]{};
+int origin_x[5];
+int origin_y[5];
 int currentIdx{};
-
+bool dir{ true };
 bool numFlag[4]{};
 
 int main(int argc, char** argv) { //--- 윈도우 출력하고 콜백함수 설정
@@ -87,9 +92,6 @@ GLvoid Reshape(int w, int h) { //--- 콜백 함수: 다시 그리기 콜백 함수
 
 GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
 
-    
-
-
     switch (key) {
     case '1':
     case '2':
@@ -97,6 +99,26 @@ GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
     case '4':
         numFlag[key - '0' - 1] = (numFlag[key - '0' - 1] + 1) % 2;
         break;
+    case 's':
+        for (int i = 0; i < 4; ++i)
+            numFlag[i] = false;
+        break;
+    case 'm':
+        for (int i = 0; i < 5; ++i) {
+            r[i].x = origin_x[i];
+            r[i].y = origin_y[i];
+
+        }
+        break;
+    case 'r':
+        currentIdx = 0;
+        for (int i = 0; i < 5; ++i) {
+            r[i].isActive = false;
+            r[i].size = 15;
+        }
+        break;
+    case 'q':
+        glutLeaveMainLoop();
     default:
         break;
     }
@@ -107,6 +129,72 @@ void TimerFunction(int value)
 {
     switch (value) {
     case 1:
+        if (numFlag[0]) {
+            for (int i = 0; i < 5; ++i) {
+                if (r[i].move_x) {
+                    r[i].x += 10;
+                    if (r[i].x + 10 > 750)
+                        r[i].move_x = false;
+                }
+                else {
+                    r[i].x -= 10;
+                    if (r[i].x + 10 < 50)
+                        r[i].move_x = true;
+                }
+
+                if (r[i].move_y) {
+                    r[i].y += 10;
+
+                    if (r[i].y + 10 > 550)
+                        r[i].move_y = false;
+                }
+                else {
+                    r[i].y -= 10;
+
+                    if (r[i].y - 10 < 50)
+                        r[i].move_y = true;
+                }
+            }
+        }
+        if (numFlag[1]) {
+            for (int i = 0; i < 5; ++i) {
+                if (dir) {
+                    r[i].x += 20;
+                    dir = false;
+                }
+                else {
+                    r[i].x -= 20;
+                    dir = true;
+                }
+
+                if (r[i].move_x) {
+                    r[i].x += 10;
+                    if (r[i].x + 10 > 750)
+                        r[i].move_x = false;
+                }
+                else {
+                    r[i].x -= 10;
+                    if (r[i].x + 10 < 50)
+                        r[i].move_x = true;
+                }
+
+                if (r[i].move_y) {
+                    r[i].y += 10;
+
+                    if (r[i].y + 10 > 550)
+                        r[i].move_y = false;
+                }
+                else {
+                    r[i].y -= 10;
+
+                    if (r[i].y - 10 < 50)
+                        r[i].move_y = true;
+                }
+            }
+
+
+
+        }
         if (numFlag[2]) {
             for (int i = 0; i < 5; ++i) {
                 r[i].size = uid(dre);
@@ -140,6 +228,9 @@ void Mouse(int button, int state, int x, int y) {
             r[currentIdx].g = urd(dre);
             r[currentIdx].b = urd(dre);
             r[currentIdx].isActive = true;
+
+            origin_x[currentIdx] = r[currentIdx].x;
+            origin_y[currentIdx] = r[currentIdx].y;
             currentIdx++;
         }
     }
