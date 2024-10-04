@@ -119,6 +119,7 @@ GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
         break;
     case 'q':
         glutLeaveMainLoop();
+        break;
     default:
         break;
     }
