@@ -5,6 +5,7 @@
 #include <GL/freeglut_ext.h>
 #define WIDTH 800
 #define HEIGHT 600
+CONST INT RECTCNT = 40;
 
 std::random_device rd;
 std::default_random_engine dre(rd());
@@ -18,6 +19,7 @@ void TimerFunction(int value);
 bool timerActive{ false };
 void Mouse(int button, int state, int x, int y);
 void Motion(int x, int y);
+
 
 float convertX(int x) {
     return ((float)x / (WIDTH / 2)) - 1.f;
@@ -37,7 +39,7 @@ struct Rect
 int r_size{ 15 };
 int eraser_size{ 30 };
 
-Rect r[20];
+Rect r[RECTCNT];
 Rect eraser;
 bool left_button;
 
@@ -73,7 +75,7 @@ GLvoid drawScene() { //--- 콜백 함수: 그리기 콜백 함수
     glClearColor(1.0f, 1.0f, 1.0f, 1.0f); //--- 바탕색을 변경 (예: 검은색)
     glClear(GL_COLOR_BUFFER_BIT); //--- 설정된 색으로 전체를 칠하기
 
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < RECTCNT; ++i) {
         if (r[i].isActive) {
             glColor3f(r[i].r, r[i].g, r[i].b);
             glRectf(convertX(r[i].x - r_size), convertY(r[i].y - r_size), convertX(r[i].x + r_size), convertY(r[i].y + r_size));
@@ -95,6 +97,21 @@ GLvoid Reshape(int w, int h) { //--- 콜백 함수: 다시 그리기 콜백 함수
 
 GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
 
+    switch (key)
+    {
+    case 'r':
+        for (int i = 0; i < RECTCNT; ++i) {
+            r[i].x = uid(dre);
+            r[i].y = uid(dre);
+            r[i].r = urd(dre);
+            r[i].g = urd(dre);
+            r[i].b = urd(dre);
+            r[i].isActive = true;
+        }
+        break;
+    default:
+        break;
+    }
 
 
   
@@ -112,6 +129,10 @@ void Mouse(int button, int state, int x, int y)
     else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP) {
         left_button == false;
         eraser.isActive = false;
+        eraser_size = 30;
+        eraser.r = 0.f;
+        eraser.g = 0.f;
+        eraser.b = 0.f;
     }
      
     glutPostRedisplay();
@@ -121,8 +142,16 @@ void Motion(int x, int y)
 {
     eraser.x = x;
     eraser.y = y;
-
-
+    for (int i = 0; i < RECTCNT; ++i) {
+        if (r[i].x - r_size < eraser.x + eraser_size && r[i].y - r_size < eraser.y + eraser_size &&
+            r[i].x + r_size>eraser.x - eraser_size && r[i].y + r_size>eraser.y - eraser_size && r[i].isActive) {
+            r[i].isActive = false;
+            eraser.r = r[i].r;
+            eraser.g = r[i].g;
+            eraser.b = r[i].b;
+            eraser_size += 1;
+        }
+    }
     glutPostRedisplay();
 }
 
