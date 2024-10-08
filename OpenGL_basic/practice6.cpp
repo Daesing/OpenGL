@@ -21,9 +21,10 @@ struct Rect {
     int size{ uid_size(dre) };
     bool is_active{ true };
 
+
 };
 
-Rect r[10];
+Rect r[7];
 
 GLvoid drawScene(GLvoid);
 GLvoid Reshape(int w, int h);
@@ -93,7 +94,7 @@ GLvoid Keyboard(unsigned char key, int x, int y) { //--- 키보드 입력 처리
     glutPostRedisplay(); //--- 배경색이 바뀔 때마다 출력 콜백 함수를 호출하여 화면을 refresh 한다
 }
 
-void TimerFunction(int value);
+void TimerFunction(int value)
 {
 
     switch (value) {
