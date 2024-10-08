@@ -5,6 +5,11 @@
 #include <GL/freeglut_ext.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <random>
+
+std::random_device rd;
+std::default_random_engine dre(rd());
+std::uniform_int_distribution uid{ 0,9 };
 CONST INT WIDTH = 800;
 CONST INT HEIGHT = 600;
 
@@ -16,6 +21,7 @@ struct Shape {
 	GLfloat cord[4][3]{};
 	GLfloat colors[3][3] = { //--- 삼각형 꼭지점 색상
 	{ 1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 } };
+	int type{};
 
 };
 
@@ -86,7 +92,7 @@ GLvoid drawScene()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	for (int i = 0; i < 10; ++i) {
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(shape[i].cord), &shape[i].cord);
-		switch (type) {
+		switch (shape[i].type) {
 		case 1:
 			glDrawArrays(GL_POINTS, 0, 1);
 			break;
@@ -126,33 +132,67 @@ void Mouse(int button, int state, int x, int y)
 
 			shape[cnt].cord[3][0] = convertX(x + 40);
 			shape[cnt].cord[3][1] = convertY(y - 40);
+			++cnt;
+			if (shape[cnt - 1].type == 0)
+				--cnt;
 		}
-		++cnt;
+
 
 	}
 	glutPostRedisplay();
 }
 
 void Keyboard(unsigned char key, int x, int y) {
+	int temp{ uid(dre) };
+
 	switch (key)
 	{
 	case '1':
-		type = 1;
+		shape[cnt].type = 1;
 		break;
 	case '2':
-		type = 2;
+		shape[cnt].type = 2;
 		break;
 	case '3':
-		type = 3;
+		shape[cnt].type = 3;
 		break;
 	case '4':
-		type = 4;
+		shape[cnt].type = 4;
 		break;
-
-
+	case 'c':
+		cnt = 0;
+		for (int i = 0; i < 10; ++i) {
+			shape[i].type = 0;
+		}
+		break;
+	case 'w':
+		shape[temp].cord[0][1] += 0.1;
+		shape[temp].cord[1][1] += 0.1;
+		shape[temp].cord[2][1] += 0.1;
+		shape[temp].cord[3][1] += 0.1;
+		break;
+	case 'a':
+		shape[temp].cord[0][0] -= 0.1;
+		shape[temp].cord[1][0] -= 0.1;
+		shape[temp].cord[2][0] -= 0.1;
+		shape[temp].cord[3][0] -= 0.1;
+		break;
+	case 's':
+		shape[temp].cord[0][1] -= 0.1;
+		shape[temp].cord[1][1] -= 0.1;
+		shape[temp].cord[2][1] -= 0.1;
+		shape[temp].cord[3][1] -= 0.1;
+		break;
+	case 'd':
+		shape[temp].cord[0][0] += 0.1;
+		shape[temp].cord[1][0] += 0.1;
+		shape[temp].cord[2][0] += 0.1;
+		shape[temp].cord[3][0] += 0.1;
+		break;
 	default:
 		break;
 	}
+	glutPostRedisplay();
 }
 
 
