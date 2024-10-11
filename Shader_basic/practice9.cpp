@@ -17,6 +17,7 @@ std::random_device rd;
 std::default_random_engine dre(rd());
 std::uniform_real_distribution<float> urd{ 0.f,1.f };
 std::uniform_int_distribution uid{ 10, 25 };
+std::uniform_int_distribution uid_pos{ 100,500 };
 
 //--- ¸ÞÀÎ ÇÔ¼ö
 // 
@@ -86,6 +87,86 @@ struct Shape {
 		y = y_;
 	}
 
+	void random_pos() {
+		x = uid_pos(dre);
+		y = uid_pos(dre);
+	}
+
+	void bounce() {
+		if (x < 50)
+			x1 = 15;
+
+		if (x > 750)
+			x1 = -15;
+
+		if (y < 50)
+			y1 = 15;
+
+		if (y > 550)
+			y1 = -15;
+
+		x += x1;
+		y += y1;
+	}
+
+	void zigzag() {
+		if (x < 50) {
+			x = 50;
+			x1 = 15;
+			y += 30;
+		}
+
+		if (x > 750) {
+			x = 750;
+			x1 = -15;
+			y += 30;
+		}
+
+		x += x1;
+		y += y1;
+	}
+
+	void rect_spiral() {
+		if (x < xs) {
+			x = xs;
+			x1 = 0;
+			y1 = 15;
+			xe -= 60;
+		}
+
+		//¿À¸¥ÂÊ º® ºÎµúÈû
+		if (x > xe) {
+			x = xe;
+			x1 = 0;
+			y1 = -15;
+			xs += 60;
+		}
+		//À­ÂÊ º® ºÎµúÈû
+		if (y < ys) {
+			y = ys;
+			y1 = 0;
+			x1 = -15;
+			ye -= 30;
+
+		}
+		//¾Æ·¡ÂÊ º® ºÎµúÈû
+		if (y > ye) {
+			y = ye;
+			y1 = 0;
+			x1 = 15;
+			ys += 30;
+		}
+
+		x += x1;
+		y += y1;
+	}
+
+	void spiral() {
+		float t = duration;
+		duration += 15;
+		x = 400 + t / 2 * cos(t * M_PI / 180);
+		y = 300 + t / 2 * sin(t * M_PI / 180);
+	}
 };
 
 Shape shape[4];
@@ -156,6 +237,7 @@ void Keyboard(unsigned char key, int x, int y) {
 	case '1':
 		num_flag[0] = true;
 		for (int i = 0; i < LISTSIZE; ++i) {
+			shape[i].random_pos();
 			shape[i].x1 = 15;
 			shape[i].y1 = 15;
 		}
@@ -163,6 +245,7 @@ void Keyboard(unsigned char key, int x, int y) {
 	case '2':
 		num_flag[1] = true;
 		for (int i = 0; i < LISTSIZE; ++i) {
+			shape[i].random_pos();
 			shape[i].x1 = 15;
 			shape[i].y1 = 0;
 		}
@@ -170,7 +253,10 @@ void Keyboard(unsigned char key, int x, int y) {
 	case '3':
 		num_flag[2] = true;
 		for (int i = 0; i < LISTSIZE; ++i) {
-			shape[i].x = 750;
+			if (i == 0)
+				shape[i].x = 750;
+			else
+				shape[i].x = shape[i-1].x - 50;
 			shape[i].y = 50;
 			shape[i].x1 = -15;
 			shape[i].y1 = 0;
@@ -182,8 +268,12 @@ void Keyboard(unsigned char key, int x, int y) {
 		break;
 	case '4':
 		num_flag[3] = true;
-		for (int i = 0; i < LISTSIZE; ++i) {
-			shape[i].duration = 0;
+		for (int i = LISTSIZE - 1; i >= 0; --i) {
+			if (i == LISTSIZE - 1)
+				shape[i].duration = 0;
+			else 
+				shape[i].duration = shape[i + 1].duration + 10;
+			
 		}
 		break;
 	default:
@@ -200,39 +290,13 @@ void TimerFunction(int value) {
 	case 1:
 		if (num_flag[0]) {
 			for (int i = 0; i < LISTSIZE; ++i) {
-				if (shape[i].x < 50)
-					shape[i].x1 = 15;
-
-				if (shape[i].x > 750)
-					shape[i].x1 = -15;
-
-				if (shape[i].y < 50)
-					shape[i].y1 = 15;
-
-				if (shape[i].y > 550)
-					shape[i].y1 = -15;
-
-				shape[i].x += shape[i].x1;
-				shape[i].y += shape[i].y1;
+				shape[i].bounce();
 
 			}
 		}
 		else if (num_flag[1]) {
 			for (int i = 0; i < LISTSIZE; ++i) {
-				if (shape[i].x < 50) {
-					shape[i].x = 50;
-					shape[i].x1 = 15;
-					shape[i].y += 30;
-				}
-
-				if (shape[i].x > 750) {
-					shape[i].x = 750;
-					shape[i].x1 = -15;
-					shape[i].y += 30;
-				}
-
-				shape[i].x += shape[i].x1;
-				shape[i].y += shape[i].y1;
+				shape[i].zigzag();
 			}
 
 
@@ -240,46 +304,12 @@ void TimerFunction(int value) {
 		else if (num_flag[2]) {
 			//¿ÞÂÊ º® ºÎµúÈû
 			for (int i = 0; i < LISTSIZE; ++i) {
-				if (shape[i].x < shape[i].xs) {
-					shape[i].x = shape[i].xs;
-					shape[i].x1 = 0;
-					shape[i].y1 = 15;
-					shape[i].xe -= 60;
-				}
-
-				//¿À¸¥ÂÊ º® ºÎµúÈû
-				if (shape[i].x > shape[i].xe) {
-					shape[i].x = shape[i].xe;
-					shape[i].x1 = 0;
-					shape[i].y1 = -15;
-					shape[i].xs += 60;
-				}
-				//À­ÂÊ º® ºÎµúÈû
-				if (shape[i].y < shape[i].ys) {
-					shape[i].y = shape[i].ys;
-					shape[i].y1 = 0;
-					shape[i].x1 = -15;
-					shape[i].ye -= 30;
-
-				}
-				//¾Æ·¡ÂÊ º® ºÎµúÈû
-				if (shape[i].y > shape[i].ye) {
-					shape[i].y = shape[i].ye;
-					shape[i].y1 = 0;
-					shape[i].x1 = 15;
-					shape[i].ys += 30;
-				}
-
-				shape[i].x += shape[i].x1;
-				shape[i].y += shape[i].y1;
+				shape[i].rect_spiral();
 			}
 		}
 		else if (num_flag[3]) {
 			for (int i = 0; i < LISTSIZE; ++i) {
-				float t = shape[i].duration;
-				shape[i].duration += 15;
-				shape[i].x = 400 + t / 2 * cos(t * M_PI / 180);
-				shape[i].y = 300 + t / 2 * sin(t * M_PI / 180);
+				shape[i].spiral();
 			}
 
 		}
