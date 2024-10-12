@@ -57,6 +57,7 @@ struct Shape {
 	int xs{}, ys{};
 	int xe{}, ye{};
 	int duration{ uid(dre) };
+	bool dir{ false };
 
 	GLfloat colors[3][3] = { //--- »ï°¢Çü ²ÀÁöÁ¡ »ö»ó
 	{ urd(dre), urd(dre), urd(dre)}, {urd(dre), urd(dre), urd(dre)}, {urd(dre), urd(dre), urd(dre)} };
@@ -66,14 +67,28 @@ struct Shape {
 	void draw_shape() {
 		GLfloat cord[3][3]{};
 
-		cord[0][0] = convertX(x);
-		cord[0][1] = convertY(y - 30);
+		if (!dir) {
+			cord[0][0] = convertX(x);
+			cord[0][1] = convertY(y - 30);
 
-		cord[1][0] = convertX(x - 40);
-		cord[1][1] = convertY(y + 20);
+			cord[1][0] = convertX(x - 40);
+			cord[1][1] = convertY(y + 20);
 
-		cord[2][0] = convertX(x + 40);
-		cord[2][1] = convertY(y + 20);
+			cord[2][0] = convertX(x + 40);
+			cord[2][1] = convertY(y + 20);
+		}
+		else if (dir) {
+			cord[0][0] = convertX(x + 40);
+			cord[0][1] = convertY(y + 20);
+
+			cord[1][0] = convertX(x - 40);
+			cord[1][1] = convertY(y - 20);
+
+			cord[2][0] = convertX(x);
+			cord[2][1] = convertY(y - 30);
+
+
+		}
 
 		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cord), &cord);
@@ -91,20 +106,31 @@ struct Shape {
 		x = uid_pos(dre);
 		y = uid_pos(dre);
 	}
+	
+	void change_dir() {
+		if (dir)
+			dir = false;
+		else
+			dir = true;
+	}
 
 	void bounce() {
-		if (x < 50)
+		if (x < 50) {
 			x1 = 15;
-
-		if (x > 750)
+			change_dir();
+		}
+		if (x > 750) {
 			x1 = -15;
-
-		if (y < 50)
+			change_dir();
+		}
+		if (y < 50) {
 			y1 = 15;
-
-		if (y > 550)
+			change_dir();
+		}
+		if (y > 550) {
 			y1 = -15;
-
+			change_dir();
+		}
 		x += x1;
 		y += y1;
 	}
@@ -114,12 +140,14 @@ struct Shape {
 			x = 50;
 			x1 = 15;
 			y += 30;
+			change_dir();
 		}
 
 		if (x > 750) {
 			x = 750;
 			x1 = -15;
 			y += 30;
+			change_dir();
 		}
 
 		x += x1;
@@ -132,6 +160,7 @@ struct Shape {
 			x1 = 0;
 			y1 = 15;
 			xe -= 60;
+			change_dir();
 		}
 
 		//¿À¸¥ÂÊ º® ºÎµúÈû
@@ -140,6 +169,7 @@ struct Shape {
 			x1 = 0;
 			y1 = -15;
 			xs += 60;
+			change_dir();
 		}
 		//À­ÂÊ º® ºÎµúÈû
 		if (y < ys) {
@@ -147,6 +177,7 @@ struct Shape {
 			y1 = 0;
 			x1 = -15;
 			ye -= 30;
+			change_dir();
 
 		}
 		//¾Æ·¡ÂÊ º® ºÎµúÈû
@@ -155,6 +186,7 @@ struct Shape {
 			y1 = 0;
 			x1 = 15;
 			ys += 30;
+			change_dir();
 		}
 
 		x += x1;
