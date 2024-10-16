@@ -144,7 +144,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutKeyboardFunc(Keyboard);
-	glutTimerFunc(1500, TimerFunction, 1);
+	glutTimerFunc(200, TimerFunction, 1);
 	glutMainLoop();
 }
 
@@ -277,7 +277,7 @@ void TimerFunction(int value) {
 
 	glutPostRedisplay();
 
-	glutTimerFunc(1500, TimerFunction, 1);
+	glutTimerFunc(200, TimerFunction, 1);
 
 }
 
