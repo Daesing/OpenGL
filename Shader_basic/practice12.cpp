@@ -6,21 +6,18 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <random>
-#include <gl/glm/glm.hpp>
-#include <gl/glm/ext.hpp>
-#include <gl/glm/gtc/matrix_transform.hpp>
-#include <gl/glm/gtc/type_ptr.hpp>
 
 
 
 CONST INT WIDTH = 800;
 CONST INT HEIGHT = 600;
-CONST INT LISTSIZE = 4;
+CONST INT LISTSIZE = 15;
 std::random_device rd;
 std::default_random_engine dre(rd());
 std::uniform_real_distribution<float> urd{ 0.f,1.f };
 std::uniform_int_distribution uid{ 10, 25 };
-std::uniform_int_distribution uid_pos{ 100,500 };
+std::uniform_int_distribution uid_pos{ 100,550 };
+std::uniform_int_distribution uid_sh{ 1,5 };
 //--- 메인 함수
 // 
 // 
@@ -34,6 +31,9 @@ GLvoid Reshape(int w, int h);
 void InitBuffer();
 char* filetobuf(const char* file);
 void Mouse(int button, int state, int x, int y);
+void Keyboard(unsigned char key, int x, int y);
+void TimerFunction(int value);
+void Motion(int x, int y);
 
 
 float convertX(int x) {
@@ -44,13 +44,90 @@ float convertY(int y) {
 }
 
 GLuint vao, vbo[2];
-GLchar* vertexSource, * fragmentSource; //--- 소스코드 저장 변수 
+GLchar* vertexSource, * fragmentSource; //--- 소스코드 저장 변수
 GLuint vertexShader, fragmentShader; //--- 세이더 객체
 GLuint shaderProgramID; //--- 셰이더 프로그램
-float trishape[3][3]{ {0.2,0,0.2},{-0.2,0,0.4},{0,0.5,-0.5} };
-float colors[3][3]{ {0.2,0.4,0.1},{0.2,0.6,0.3},{0.8,0.5,0.1} };
-float line1[2][2]{ {-1,0},{1,0} };
-float line2[2][2]{ {0,-1},{0,1} };
+bool num_flag[5]{ false };
+
+
+struct Shape {
+	int x{uid_pos(dre)}, y{uid_pos(dre)};
+	int type{uid_sh(dre)};
+	GLfloat colors[5][3] = { //--- 삼각형 꼭지점 색상
+	{ urd(dre), urd(dre), urd(dre)}, {urd(dre), urd(dre), urd(dre)}, {urd(dre), urd(dre), urd(dre)}, {urd(dre), urd(dre), urd(dre)} , {urd(dre), urd(dre), urd(dre)} };
+	bool is_active{ true };
+
+	void draw_shape() {
+		GLfloat cord[5][3]{};
+
+		if (type==1) {
+			cord[0][0] = convertX(x - 10);
+			cord[0][1] = convertY(y - 10);
+
+			cord[1][0] = convertX(x + 10);
+			cord[1][1] = convertY(y - 10);
+
+			cord[2][0] = convertX(x - 10);
+			cord[2][1] = convertY(y + 10);
+
+			cord[3][0] = convertX(x + 10);
+			cord[3][1] = convertY(y + 10);
+		}
+		else {
+			cord[0][0] = convertX(x - 40);
+			cord[0][1] = convertY(y);
+
+			cord[1][0] = convertX(x - 20);
+			cord[1][1] = convertY(y + 40);
+
+			cord[2][0] = convertX(x);
+			cord[2][1] = convertY(y - 40);
+
+			cord[3][0] = convertX(x + 20);
+			cord[3][1] = convertY(y + 40);
+
+			cord[4][0] = convertX(x + 40);
+			cord[4][1] = convertY(y);
+		}
+
+
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cord), &cord);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors), &colors);
+		switch (type)
+		{
+		case 1:
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			break;
+		case 2:
+			glDrawArrays(GL_LINES, 0, 2);
+			break;
+		case 3:
+			glDrawArrays(GL_TRIANGLES, 0, 3);
+			break;
+		case 4:
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			break;
+		case 5:
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 5);
+			break;
+		default:
+			break;
+		}
+
+	}
+
+
+};
+
+Shape shape[LISTSIZE];
+
+int check_shape(int x, int y) {
+
+
+}
+
 
 
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
@@ -68,6 +145,9 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	InitBuffer();
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
+	glutMotionFunc(Motion);
+	//glutKeyboardFunc(Keyboard);
+	//glutTimerFunc(200, TimerFunction, 1);
 	glutMainLoop();
 }
 
@@ -80,28 +160,145 @@ GLvoid drawScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//--- 렌더링 파이프라인에 세이더 불러오기
 	glUseProgram(shaderProgramID);
-	glm::mat4 Rz = glm::mat4(1.0f); //--- 회전 행렬 선언
-	glm::mat4 Tx = glm::mat4(1.0f); //--- 이동 행렬 선언
-	glm::mat4 TR = glm::mat4(1.0f);
-
-
-	//--- 적용할 모델링 변환 행렬 만들기
-	Tx = glm::translate(Tx, glm::vec3(0.5, 0.0, 0.0));
-	Rz = glm::rotate(Rz, glm::radians(10.0f), glm::vec3(1.0, 1.0, 0.0));
-	TR = Rz;
-
-	//--- 세이더 프로그램에서 modelTransform 변수 위치 가져오기
-	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "modelTransform");
-	//--- modelTransform 변수에 변환 값 적용하기
-	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
-	//--- 도형 그리기
+	//--- 사용할 VAO 불러오기
 	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glutSwapBuffers();
+	for (int i = 0; i < LISTSIZE; ++i) {
+		if (shape[i].is_active)
+			shape[i].draw_shape();
+	}
+	//--- 삼각형 그리기
+	glutSwapBuffers(); //--- 화면에 출력하기
 }
 
 
+void Keyboard(unsigned char key, int x, int y) {
+
+	for (int i = 0; i < LISTSIZE; ++i) {
+		shape[i].is_active = false;
+		shape[i].x = 400;
+		shape[i].y = 300;
+	}
+
+	for (int i = 0; i < 5; ++i) {
+		num_flag[i] = false;
+	}
+
+
+	switch (key)
+	{
+	case '1':
+		num_flag[0] = true;
+		break;
+	case '2':
+		num_flag[1] = true;
+		break;
+	case '3':
+		num_flag[2] = true;
+		break;
+	case '4':
+		num_flag[3] = true;
+		break;
+	case '5':
+		num_flag[4] = true;
+		for (int i = 0; i < LISTSIZE; ++i) {
+			shape[i].is_active = true;
+		}
+		std::cout << "majong" << '\n';
+		break;
+	default:
+		break;
+	}
+	glutPostRedisplay();
+}
+
+void TimerFunction(int value) {
+	switch (value)
+	{
+	case 1:
+		//선 - 삼각형
+		if (num_flag[0]) {
+			if (shape[0].is_active == false) {
+				shape[0].is_active = true;
+				shape[1].is_active = false;
+			}
+			else {
+				shape[1].is_active = true;
+				shape[0].is_active = false;
+			}
+		}
+		//삼각형 - 사각형
+		else if (num_flag[1]) {
+			if (shape[1].is_active == false) {
+				shape[1].is_active = true;
+				shape[2].is_active = false;
+			}
+			else {
+				shape[2].is_active = true;
+				shape[1].is_active = false;
+			}
+		}
+		//사각형 - 오각형
+		else if (num_flag[2]) {
+			if (shape[2].is_active == false) {
+				shape[2].is_active = true;
+				shape[3].is_active = false;
+			}
+			else {
+				shape[3].is_active = true;
+				shape[2].is_active = false;
+			}
+		}
+		//오각형 - 선
+		else if (num_flag[3]) {
+			if (shape[3].is_active == false) {
+				shape[3].is_active = true;
+				shape[0].is_active = false;
+			}
+			else {
+				shape[0].is_active = true;
+				shape[3].is_active = false;
+			}
+		}
+		//전체 동시 변경
+		else if (num_flag[4]) {
+			for (int i = 0; i < LISTSIZE; ++i) {
+				if (shape[i].type < 5)
+					shape[i].type += 1;
+				else
+					shape[i].type = 2;
+			}
+
+		}
+
+
+		break;
+	default:
+		break;
+	}
+
+	glutPostRedisplay();
+
+	glutTimerFunc(200, TimerFunction, 1);
+
+}
+
 void Mouse(int button, int state, int x, int y) {
+
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN) {
+
+		check_shape();
+
+	}
+	
+
+}
+
+void Motion(int x, int y)
+{
+	for (int i = 0; i < LISTSIZE; ++i) {
+
+		
+	}
 
 
 }
@@ -121,7 +318,7 @@ void InitBuffer()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	//--- 변수 diamond 에서 버텍스 데이터 값을 버퍼에 복사한다.
 	//--- triShape 배열의 사이즈: 9 * float
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), trishape, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 15 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
 	//--- 좌표값을 attribute 인덱스 0번에 명시한다: 버텍스 당 3* float
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	//--- attribute 인덱스 0번을 사용가능하게 함
@@ -130,7 +327,7 @@ void InitBuffer()
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	//--- 변수 colors에서 버텍스 색상을 복사한다.
 	//--- colors 배열의 사이즈: 9 *float
-	glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(GLfloat), colors, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, 15 * sizeof(GLfloat), NULL, GL_STATIC_DRAW);
 	//--- 색상값을 attribute 인덱스 1번에 명시한다: 버텍스 당 3*float
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	//--- attribute 인덱스 1번을 사용 가능하게 함.

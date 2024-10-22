@@ -47,11 +47,11 @@ GLuint vao, vbo[2];
 GLchar* vertexSource, * fragmentSource; //--- 소스코드 저장 변수 
 GLuint vertexShader, fragmentShader; //--- 세이더 객체
 GLuint shaderProgramID; //--- 셰이더 프로그램
-float trishape[3][3]{ {0.2,0,0.2},{-0.2,0,0.4},{0,0.5,-0.5} };
+float trishape[3][3]{ {0.2,0,0},{-0.2,0,0},{0,0.5,0} };
 float colors[3][3]{ {0.2,0.4,0.1},{0.2,0.6,0.3},{0.8,0.5,0.1} };
-float line1[2][2]{ {-1,0},{1,0} };
-float line2[2][2]{ {0,-1},{0,1} };
-
+float line1[2][3]{ {-1,0,0},{1,0,0} };
+float line2[2][3]{ {0,-1,0},{0,1,0} };
+float line3[2][3]{ {0,0,-1},{0,0,1} };
 
 void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 {
@@ -87,15 +87,41 @@ GLvoid drawScene()
 
 	//--- 적용할 모델링 변환 행렬 만들기
 	Tx = glm::translate(Tx, glm::vec3(0.5, 0.0, 0.0));
-	Rz = glm::rotate(Rz, glm::radians(10.0f), glm::vec3(1.0, 1.0, 0.0));
+	Rz = glm::rotate(Rz, glm::radians(45.0f), glm::vec3(1.0, 1.0, 0.0));
 	TR = Rz;
+
 
 	//--- 세이더 프로그램에서 modelTransform 변수 위치 가져오기
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "modelTransform");
 	//--- modelTransform 변수에 변환 값 적용하기
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(TR));
 	//--- 도형 그리기
+
 	glBindVertexArray(vao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line1), &line1);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors), &colors);
+	glDrawArrays(GL_LINES, 0, 2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line2), &line2);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors), &colors);
+	glDrawArrays(GL_LINES, 0, 2);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(line3), &line3);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors), &colors);
+	glDrawArrays(GL_LINES, 0, 2);
+
+	
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(trishape), &trishape);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors), &colors);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 	glutSwapBuffers();
 }
@@ -115,8 +141,10 @@ GLvoid Reshape(int w, int h)
 void InitBuffer()
 {
 	glGenVertexArrays(1, &vao); //--- VAO 를 지정하고 할당하기
-	glBindVertexArray(vao); //--- VAO를 바인드하기
 	glGenBuffers(2, vbo); //--- 2개의 VBO를 지정하고 할당하기
+
+	glBindVertexArray(vao); //--- VAO를 바인드하기
+	
 	//--- 1번째 VBO를 활성화하여 바인드하고, 버텍스 속성 (좌표값)을 저장
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	//--- 변수 diamond 에서 버텍스 데이터 값을 버퍼에 복사한다.
@@ -135,6 +163,8 @@ void InitBuffer()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	//--- attribute 인덱스 1번을 사용 가능하게 함.
 	glEnableVertexAttribArray(1);
+
+	
 }
 
 
