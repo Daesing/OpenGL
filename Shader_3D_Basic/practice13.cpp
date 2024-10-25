@@ -19,8 +19,8 @@ CONST INT LISTSIZE = 4;
 std::random_device rd;
 std::default_random_engine dre(rd());
 std::uniform_real_distribution<float> urd{ 0.f,1.f };
-std::uniform_int_distribution uid{ 10, 25 };
-std::uniform_int_distribution uid_pos{ 100,500 };
+std::uniform_int_distribution uid_cube{ 0,5 };
+std::uniform_int_distribution uid_polyhydron{ 0,3 };
 
 struct Shape {
 	float shape_face[4][3]{};
@@ -43,6 +43,7 @@ GLvoid Reshape(int w, int h);
 void InitBuffer();
 char* filetobuf(const char* file);
 void Mouse(int button, int state, int x, int y);
+void Keyboard(unsigned char key, int x, int y);
 
 
 float convertX(int x) {
@@ -58,20 +59,31 @@ GLuint vertexShader, fragmentShader; //--- 세이더 객체
 GLuint shaderProgramID; //--- 셰이더 프로그램
 GLuint shaderProgramID1; //--- 셰이더 프로그램
 
+bool cube_flag[6]{ false };
+bool polyhydron_flag[4]{ false };
+
 float cube1[4][3]{ {-0.2,-0.2,0},{0.2,-0.2,0},{-0.2,0.2,0},{0.2,0.2,0} };
 float cube2[4][3]{ {-0.2,-0.2,-0.2},{0.2,-0.2,-0.2},{-0.2,0.2,-0.2 },{0.2,0.2,-0.2} };
-
 
 float cube3[4][3]{ {0.2,-0.2,0},{0.2,-0.2,-0.2},{0.2,0.2,0},{0.2,0.2,-0.2} };
 float cube4[4][3]{ {-0.2,-0.2,0},{-0.2,-0.2,-0.2},{-0.2,0.2,0},{-0.2,0.2,-0.2} };
 
-float cube5[4][3]{ {-0.2,-0.2,0},{-0.2,-0.2,-0.2},{-0.2,0.2,0},{-0.2,0.2,-0.2} };
+float cube5[4][3]{ {-0.2,-0.2,0},{-0.2,-0.2,-0.2},{0.2,-0.2,0},{0.2,-0.2,-0.2} };
 float cube6[4][3]{ {-0.2,0.2,0},{-0.2,0.2,-0.2},{0.2,0.2,0},{0.2,0.2,-0.2} };
 
+float polyhydron1[3][3]{ {0,0.2,0},{-0.2,-0.2,0},{0.2,-0.2,0} };
+float polyhydron2[3][3]{ {0,0,0.2},{0.2,-0.2,0},{0,0.2,0} };
+float polyhydron3[3][3]{ {0,0,0.2},{0.2,-0.2,0},{-0.2,-0.2,0} };
+float polyhydron4[3][3]{ {0,0,0.2},{-0.2,-0.2,0},{0,0.2,0} };
 
 float colors1[4][3]{ {0,0,1},{0,0,1},{0,0,1},{0,0,1} };
 float colors2[4][3]{ {0,1,0},{0,1,0},{0,1,0},{0,1,0} };
 float colors3[4][3]{ {1,0,0},{1,0,0},{1,0,0},{1,0,0} };
+
+float colors4[3][3]{ {0,0,1},{0,0,1},{0,0,1} };
+float colors5[3][3]{ {0,1,0},{0,1,0},{0,1,0} };
+float colors6[3][3]{ {1,0,0},{1,0,0},{1,0,0} };
+float colors7[3][3]{ {0.5,0.5,0},{0.5,0.5,0},{0.5,0.5,0} };
 
 float trishape[3][3]{ {0.2,0,0.2},{-0.2,0,0.4},{0,0.5,-0.5} };
 
@@ -93,6 +105,7 @@ void main(int argc, char** argv) //--- 윈도우 출력하고 콜백함수 설정
 	glewInit();
 	make_shaderProgram();
 	InitBuffer();
+	glutKeyboardFunc(Keyboard);
 	glutDisplayFunc(drawScene);
 	glutReshapeFunc(Reshape);
 	glutMainLoop();
@@ -119,8 +132,8 @@ GLvoid drawScene()
 
 	//--- 적용할 모델링 변환 행렬 만들기
 	Tx = glm::translate(Tx, glm::vec3(0.5, 0.0, 0.0));
-	Rz = glm::rotate(Rz, glm::radians(10.0f), glm::vec3(1.0, 0.0, 0.0));
-	Rz = glm::rotate(Rz, glm::radians(10.0f), glm::vec3(0.0, 1.0, 0.0));
+	Rz = glm::rotate(Rz, glm::radians(30.0f), glm::vec3(1.0, 0.0, 0.0));
+	Rz = glm::rotate(Rz, glm::radians(30.0f), glm::vec3(0.0, 1.0, 0.0));
 	TR = Rz;
 
 	//--- 세이더 프로그램에서 modelTransform 변수 위치 가져오기
@@ -130,7 +143,7 @@ GLvoid drawScene()
 	//--- 도형 그리기
 	
 	glm::mat4 projection = glm::mat4(1.0f);
-	projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f); //--- 투영 공간 설정: [-100.0, 100.0]
+	projection = glm::ortho(-1.0f, 1.0f, -1.0f, 1.0f, -1.0f, 1.0f); //--- 투영 공간 설정: [-100.0, 100.0]
 	unsigned int projectionLocation = glGetUniformLocation(shaderProgramID, "projectionTransform"); //--- 투영 변환 값 설정
 	glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, &projection[0][0]);
 
@@ -159,41 +172,116 @@ GLvoid drawScene()
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube1), &cube1);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors1), &colors1);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (cube_flag[0] == true)
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube2), &cube2);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors1), &colors1);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (cube_flag[1] == true)
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube3), &cube3);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors2), &colors2);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (cube_flag[2] == true)
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube4), &cube4);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors2), &colors2);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (cube_flag[3] == true)
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube5), &cube5);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors3), &colors3);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (cube_flag[4] == true)
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube6), &cube6);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
 	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors3), &colors3);
-	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (cube_flag[5] == true)
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(polyhydron1), &polyhydron1);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors4), &colors4);
+	if (polyhydron_flag[0] == true)
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(polyhydron2), &polyhydron2);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors5), &colors5);
+	if (polyhydron_flag[1] == true)
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(polyhydron3), &polyhydron3);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors6), &colors6);
+	if (polyhydron_flag[2] == true)
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(polyhydron4), &polyhydron4);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+	glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(colors7), &colors7);
+	if (polyhydron_flag[3] == true)
+	glDrawArrays(GL_TRIANGLES, 0, 3);
+
+
 
 	glutSwapBuffers();
 }
 
+void Keyboard(unsigned char key, int x, int y) {
+	for (int i = 0; i < 6; ++i) {
+		cube_flag[i] = false;
+	}
+
+	for (int i = 0; i < 4; ++i) {
+		polyhydron_flag[i] = false;
+	}
+
+	switch (key)
+	{
+	case '1':
+	case '2':
+	case '3':
+	case '4':
+	case '5':
+	case '0':
+		cube_flag[key - '0'] = true;
+		break;
+	case '6':
+	case '7':
+	case '8':
+	case '9':
+		polyhydron_flag[key - '6'] = true;
+		break;
+	case 'c':
+		cube_flag[uid_cube(dre)] = true;
+		cube_flag[uid_cube(dre)] = true;
+		break;
+
+	case 't':
+		polyhydron_flag[uid_polyhydron(dre)] = true;
+		polyhydron_flag[uid_polyhydron(dre)] = true;
+		break;
+	default:
+		break;
+	}
+	glutPostRedisplay();
+}
 
 void Mouse(int button, int state, int x, int y) {
 
