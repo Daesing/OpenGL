@@ -21,7 +21,8 @@ std::uniform_real_distribution<float> urd{ 0.f,1.f };
 std::uniform_int_distribution uid{ 10, 25 };
 std::uniform_int_distribution uid_pos{ 100,500 };
 
-bool anime_flag[4]{ false };
+bool anime_flag[LISTSIZE]{ false };
+bool shape_flag = true;
 char active{};
 
 float y0_rotation{ 10 };
@@ -37,7 +38,7 @@ float x2_rotation{ 10.0f };
 float y2_rotation{ 10.0f };
 
 GLUquadricObj* qobj1;
-
+GLUquadricObj* qobj2;
 
 //--- 메인 함수
 // 
@@ -158,8 +159,6 @@ GLvoid drawScene()
 	glm::mat4 Tx0 = glm::mat4(1.0f);
 	glm::mat4 Tx1 = glm::mat4(1.0f);
 	glm::mat4 Tx2 = glm::mat4(1.0f);
-	glm::mat4 Tx3 = glm::mat4(1.0f);
-	glm::mat4 Tx4 = glm::mat4(1.0f);
 
 	glm::mat4 projection = glm::mat4(1.0f);
 	projection = glm::ortho(-2.0f, 2.0f, -2.0f, 2.0f, -2.0f, 2.0f); //--- 투영 공간 설정: [-100.0, 100.0]
@@ -200,22 +199,35 @@ GLvoid drawScene()
 
 	//--- modelTransform 변수에 변환 값 적용하기
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx1));
-
-	for (int i = 0; i < 6; ++i) {
-		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube[i]), &cube[i]);
-		glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube_colors[0]), &cube_colors[i / 2]);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	if (shape_flag) {
+		for (int i = 0; i < 6; ++i) {
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube[i]), &cube[i]);
+			glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube_colors[0]), &cube_colors[i / 2]);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		}
+	}
+	else {
+		qobj2 = gluNewQuadric();
+		gluQuadricDrawStyle(qobj2, GLU_LINE);
+		gluCylinder(qobj2, 0.2, 0, 0.4, 8, 8);
 	}
 
 
 
 	//--- modelTransform 변수에 변환 값 적용하기
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx2));
-	qobj1 = gluNewQuadric();
-	gluQuadricDrawStyle(qobj1, GLU_LINE);
-	gluSphere(qobj1, 0.2, 20, 20);
+	if (shape_flag) {
+		qobj1 = gluNewQuadric();
+		gluQuadricDrawStyle(qobj1, GLU_LINE);
+		gluSphere(qobj1, 0.2, 20, 20);
+	}
+	else {
+		qobj1 = gluNewQuadric();
+		gluQuadricDrawStyle(qobj1, GLU_LINE);
+		gluCylinder(qobj1, 0.2, 0.2, 0.4, 20, 8);
+	}
 
 
 	glutSwapBuffers();
@@ -249,7 +261,30 @@ void Keyboard(unsigned char key, int x, int y) {
 		active = key;
 		break;
 
+	case 'c':
+		if (shape_flag)
+			shape_flag = false;
+		else
+			shape_flag = true;
+		break;
 
+	case 's':
+		shape_flag = true;
+		x1_translation = 0.5f;
+		y1_translation = 0;
+		x1_rotation = 10.0f;
+		y1_rotation = 10.0f;
+
+		x2_translation = -0.5f;
+		y2_translation = 0;
+		x2_rotation = 10.0f;
+		y2_rotation = 10.0f;
+
+		for (int i = 0; i < LISTSIZE; ++i) {
+			anime_flag[i] = false;
+		}
+		active = '3';
+		break;
 	default:
 		break;
 	}
