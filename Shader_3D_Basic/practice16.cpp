@@ -11,9 +11,10 @@
 #include <gl/glm/gtc/matrix_transform.hpp>
 #include <gl/glm/gtc/type_ptr.hpp>
 
+
 CONST INT WIDTH = 800;
 CONST INT HEIGHT = 600;
-CONST INT LISTSIZE = 6;
+CONST INT LISTSIZE = 5;
 CONST FLOAT CHANGE = 10.0f;
 std::random_device rd;
 std::default_random_engine dre(rd());
@@ -22,21 +23,23 @@ std::uniform_int_distribution uid{ 10, 25 };
 std::uniform_int_distribution uid_pos{ 100,500 };
 
 bool anime_flag[LISTSIZE]{ false };
-bool shape_flag = true;
-char active{};
-bool revol_flag = false;
 
 float y0_rotation{ 10 };
 
 float x1_translation{ 0.5 };
 float y1_translation{};
+float z1_translation{};
 float x1_rotation{ 10 };
 float y1_rotation{ 10 };
 
+float size1{ 1.0f };
+
 float x2_translation{ -0.5 };
 float y2_translation{};
+float z2_translation{};
 float x2_rotation{ 10.0f };
 float y2_rotation{ 10.0f };
+float size2{ 1.0f };
 
 GLUquadricObj* qobj1;
 GLUquadricObj* qobj2;
@@ -83,23 +86,6 @@ float convertY(int y) {
 	return 1.f - ((float)y / (HEIGHT / 2));
 }
 
-void modify_self(float& obj1, float& obj2, char active, char cal) {
-	if (active == '1' && cal == '+') {
-		obj2 -= CHANGE;
-	}
-	else if (active == '2' && cal == '+') {
-		obj1 -= CHANGE;
-	}
-	else if (active == '1' && cal == '-') {
-		obj2 += CHANGE;
-	}
-	else if (active == '2' && cal == '-') {
-		obj1 += CHANGE;
-	}
-	else if (active == '3') {
-		return;
-	}
-}
 
 GLuint vao, vbo[2];
 GLchar* vertexSource, * fragmentSource; //--- 소스코드 저장 변수 
@@ -176,28 +162,36 @@ GLvoid drawScene()
 		glm::translate(Tx1, glm::vec3(x1_translation, 0.0, 0.0)) *
 		glm::translate(Tx1, glm::vec3(0.0, y1_translation, 0.0)) *
 		glm::rotate(Tx1, glm::radians(y1_rotation), glm::vec3(0.0, 1.0, 0.0)) *
-		glm::rotate(Tx1, glm::radians(x1_rotation), glm::vec3(1.0, 0.0, 0.0));
+		glm::rotate(Tx1, glm::radians(x1_rotation), glm::vec3(1.0, 0.0, 0.0))*
+		glm::scale(Tx2, glm::vec3(size1, size1, size1));
 	Tx2 =
 		glm::translate(Tx2, glm::vec3(x2_translation, 0.0, 0.0)) *
 		glm::translate(Tx2, glm::vec3(0.0, y2_translation, 0.0)) *
 		glm::rotate(Tx2, glm::radians(y2_rotation), glm::vec3(0.0, 1.0, 0.0)) *
-		glm::rotate(Tx2, glm::radians(x2_rotation), glm::vec3(1.0, 0.0, 0.0));
+		glm::rotate(Tx2, glm::radians(x2_rotation), glm::vec3(1.0, 0.0, 0.0)) *
+		glm::scale(Tx2, glm::vec3(size2, size2, size2));
 
 	Tx3 =
 		glm::rotate(Tx3, glm::radians(y1_rotation), glm::vec3(0.0, 1.0, 0.0)) *
 		glm::translate(Tx3, glm::vec3(x1_translation, 0.0, 0.0)) *
 		glm::rotate(Tx3, glm::radians(10.0f), glm::vec3(0.0, 1.0, 0.0)) *
 		glm::rotate(Tx3, glm::radians(10.0f), glm::vec3(1.0, 0.0, 0.0));
-
-	Tx4 =
+		
+	Tx4 = 
 		glm::rotate(Tx4, glm::radians(y2_rotation), glm::vec3(0.0, 1.0, 0.0)) *
 		glm::translate(Tx4, glm::vec3(x2_translation, 0.0, 0.0));
+		
+	if (anime_flag[4]) {
+		Tx1 = Tx3 * Tx1;
+		Tx2 = Tx4 * Tx2;
+	}
 
 	glBindVertexArray(vao);
 
 	//--- 세이더 프로그램에서 modelTransform 변수 위치 가져오기
 	unsigned int modelLocation = glGetUniformLocation(shaderProgramID, "modelTransform");
 	//--- modelTransform 변수에 변환 값 적용하기
+
 	glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx0));
 	//--- 도형 그리기
 	for (int i = 0; i < 3; ++i) {
@@ -210,42 +204,30 @@ GLvoid drawScene()
 
 
 	//--- modelTransform 변수에 변환 값 적용하기
-	if (!revol_flag)
+	if (!anime_flag[2])
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx1));
 	else
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx3));
-	if (shape_flag) {
-		for (int i = 0; i < 6; ++i) {
-			glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube[i]), &cube[i]);
-			glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
-			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube_colors[0]), &cube_colors[i / 2]);
-			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		}
-	}
-	else {
-		qobj2 = gluNewQuadric();
-		gluQuadricDrawStyle(qobj2, GLU_LINE);
-		gluCylinder(qobj2, 0.2, 0, 0.4, 8, 8);
+	for (int i = 0; i < 6; ++i) {
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[0]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube[i]), &cube[i]);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo[1]);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(cube_colors[0]), &cube_colors[i / 2]);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 	}
 
 
 
 	//--- modelTransform 변수에 변환 값 적용하기
-	if (!revol_flag)
+	if(!anime_flag[2])
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx2));
 	else
 		glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(Tx4));
-	if (shape_flag) {
-		qobj1 = gluNewQuadric();
-		gluQuadricDrawStyle(qobj1, GLU_LINE);
-		gluSphere(qobj1, 0.2, 20, 20);
-	}
-	else {
-		qobj1 = gluNewQuadric();
-		gluQuadricDrawStyle(qobj1, GLU_LINE);
-		gluCylinder(qobj1, 0.2, 0.2, 0.4, 20, 8);
-	}
+
+	qobj1 = gluNewQuadric();
+	gluQuadricDrawStyle(qobj1, GLU_LINE);
+	gluSphere(qobj1, 0.2, 20, 20);
+
 
 
 	glutSwapBuffers();
@@ -254,51 +236,18 @@ GLvoid drawScene()
 
 
 void Keyboard(unsigned char key, int x, int y) {
-	revol_flag = false;
-	switch (key)
-	{
-	case 'y':
-		anime_flag[0] = true;
-		anime_flag[1] = false;
-		break;
-	case 'Y':
-		anime_flag[1] = true;
-		anime_flag[0] = false;
-		break;
-	case 'x':
-		anime_flag[2] = true;
-		anime_flag[3] = false;
-		break;
-
-	case 'X':
-		anime_flag[3] = true;
-		anime_flag[2] = false;
-		break;
+	for (int i = 0; i < LISTSIZE; ++i) {
+		anime_flag[i] = false;
+	}
+	switch (key) {
 	case '1':
 	case '2':
 	case '3':
-		active = key;
-		break;
-
-	case 'c':
-		if (shape_flag)
-			shape_flag = false;
-		else
-			shape_flag = true;
-		break;
-
-	case 'r':
-		revol_flag = true;
-		anime_flag[4] = true;
-		anime_flag[5] = false;
-		break;
-	case 'R':
-		revol_flag = true;
-		anime_flag[5] = true;
-		anime_flag[4] = false;
+	case '4':
+	case '5':
+		anime_flag[key - '1'] = true;
 		break;
 	case 's':
-		shape_flag = true;
 		x1_translation = 0.5f;
 		y1_translation = 0;
 		x1_rotation = 10.0f;
@@ -308,11 +257,8 @@ void Keyboard(unsigned char key, int x, int y) {
 		y2_translation = 0;
 		x2_rotation = 10.0f;
 		y2_rotation = 10.0f;
-
-		for (int i = 0; i < LISTSIZE; ++i) {
-			anime_flag[i] = false;
-		}
-		active = '3';
+		size1 = 1.0f;
+		size2 = 1.0f;
 		break;
 	default:
 		break;
@@ -326,42 +272,88 @@ void TimerFunction(int value) {
 	switch (value)
 	{
 	case 1:
-		if (anime_flag[0] == true) {
-			std::cout << "flag 0" << '\n';
-			y1_rotation += CHANGE;
-			y2_rotation += CHANGE;
-			modify_self(y1_rotation, y2_rotation, active, '+');
+		if (anime_flag[0]) {
+
 		}
 		if (anime_flag[1]) {
-			std::cout << "flag 1" << '\n';
-			y1_rotation -= CHANGE;
-			y2_rotation -= CHANGE;
-			modify_self(y1_rotation, y2_rotation, active, '-');
+			static bool dir = true;
+			if (dir) {
+				x1_translation -= 0.1f;
+				x2_translation += 0.1f;
+				if (x1_translation < -0.5)
+					dir = false;
+			}
+			else if (!dir) {
+				x1_translation += 0.1f;
+				x2_translation -= 0.1f;
+				if (x1_translation > 0.5)
+					dir = true;;
+			}
+
 		}
 		if (anime_flag[2]) {
-			x1_rotation += CHANGE;
-			x2_rotation += CHANGE;
-			modify_self(x1_rotation, x2_rotation, active, '+');
+			y1_rotation += 10.0f;
+			y2_rotation += 10.0f;
 		}
 		if (anime_flag[3]) {
-			x1_rotation -= CHANGE;
-			x2_rotation -= CHANGE;
-			modify_self(x1_rotation, x2_rotation, active, '-');
+			static int move{ 1 };
+
+			if (move == 1) {
+				x1_translation -= 0.1f;
+				y1_translation -= 0.1f;
+				x2_translation += 0.1f;
+				y2_translation += 0.1f;
+
+				if (x1_translation < 0)
+					move = 2;
+			}
+			else if (move == 2) {
+				x1_translation -= 0.1f;
+				y1_translation += 0.1f;
+				x2_translation += 0.1f;
+				y2_translation -= 0.1f;
+				if (x1_translation < -0.5)
+					move = 3;
+			}
+			else if (move == 3) {
+				x1_translation += 0.1f;
+				y1_translation += 0.1f;
+				x2_translation -= 0.1f;
+				y2_translation -= 0.1f;
+				if (x1_translation > 0)
+					move = 4;
+			}
+			else if (move == 4) {
+				x1_translation += 0.1f;
+				y1_translation -= 0.1f;
+				x2_translation -= 0.1f;
+				y2_translation += 0.1f;
+				if (x1_translation > 0.5)
+					move = 1;
+			}
+
 		}
-		if (anime_flag[4] == true) {
-			std::cout << "flag 0" << '\n';
-			y1_rotation += CHANGE;
-			y2_rotation += CHANGE;
-			modify_self(y1_rotation, y2_rotation, active, '+');
-		}
-		if (anime_flag[5]) {
-			std::cout << "flag 1" << '\n';
-			y1_rotation -= CHANGE;
-			y2_rotation -= CHANGE;
-			modify_self(y1_rotation, y2_rotation, active, '-');
+		if (anime_flag[4]) {
+			static bool size_up = true;
+
+			y1_rotation += 10.0f;
+			y2_rotation += 10.0f;
+
+			if (size_up) {
+				size1 -= 0.1f;
+				size2 += 0.1f;
+				if (size1 < 0.0f)
+					size_up = false;
+			}
+			else if (!size_up) {
+				size1 += 0.1f;
+				size2 -= 0.1f;
+				if (size1 > 1.0f)
+					size_up = true;
+			}
+
 		}
 		break;
-
 	default:
 		break;
 	}
